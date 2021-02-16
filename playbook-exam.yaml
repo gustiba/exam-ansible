@@ -1,0 +1,50 @@
+- name: Install Mysql on Ubuntu and Httpd on RedHat for Exam
+  hosts: allvm
+  become: yes
+  ignore_unreachable: yes
+  roles:
+    - role: geerlingguy.mysql
+      when: ansible_facts['distribution'] == 'Ubuntu'
+    - role: geerlingguy.apache
+      when: ansible_facts['distribution'] == 'RedHat'
+
+  tasks:
+
+    - name: Create database purwadhika
+      mysql_db:
+        name: purwadhika
+        state: present
+      when:
+        ansible_distribution == 'Ubuntu' 
+
+    - name: move file dbpurwadhika.sql to dump
+      copy:
+        src: templateweb/db/dbpurwadhika.sql
+        dest: /tmp/dbpurwadhika.sql
+      when:
+        ansible_distribution == 'Ubuntu' 
+
+    - name: import database to database purwadhika
+      mysql_db:
+        name: purwadhika
+        state: import
+        target: /tmp/dbpurwadhika.sql
+      when:
+        ansible_distribution == 'Ubuntu'      
+
+    - name: install git
+      yum:
+        name: git
+        state: present
+      when:
+        ansible_distribution == 'RedHat'
+
+    - name: clone repo from github
+      git:
+        repo: "https://github.com/hisbu/templateweb"
+        dest: "/var/www/html/"
+        clone: yes
+      when:
+        ansible_distribution == 'RedHat'
+      
+
